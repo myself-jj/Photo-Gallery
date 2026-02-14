@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>pastel · lightbox gallery</title>
+  <!-- Font Awesome 6 (free) for social icons & minimal UI -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <!-- Google Fonts: Inter & DM Sans – clean, readable -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300..600&family=DM+Sans:opsz@9..40&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Inter", "DM Sans", sans-serif;
+      background: #faf7f5;   /* soft warm pastel background */
+      color: #4b4b4b;
+      line-height: 1.5;
+      scroll-behavior: smooth;
+    }
+
+    /* navigation – minimalistic & clean */
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.4rem 5%;
+      background: rgba(255, 248, 245, 0.9);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      flex-wrap: wrap;
+      border-bottom: 1px solid #f0e4da;
+    }
+
+    .logo a {
+      font-size: 1.6rem;
+      font-weight: 350;
+      letter-spacing: -0.5px;
+      color: #a58e7c;
+      text-decoration: none;
+    }
+    .logo span { font-weight: 300; color: #cbb7a8; }
+
+    .nav-links {
+      display: flex;
+      gap: 2.2rem;
+      flex-wrap: wrap;
+    }
+    .nav-links a {
+      text-decoration: none;
+      color: #7b6b5f;
+      font-weight: 450;
+      font-size: 1.1rem;
+      transition: color 0.2s;
+      border-bottom: 2px solid transparent;
+      padding-bottom: 4px;
+    }
+    .nav-links a:hover {
+      color: #b58b7a;
+      border-bottom-color: #f0cfc0;
+    }
+
+    /* main container */
+    .container {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 2rem 3% 1rem;
+    }
+
+    /* section headers */
+    .section-title {
+      font-weight: 350;
+      font-size: 2.2rem;
+      color: #b7a192;
+      margin: 2rem 0 1.5rem 0;
+      border-left: 6px solid #e6cfc0;
+      padding-left: 1.2rem;
+      letter-spacing: -0.3px;
+    }
+
+    /* --- homepage albums grid (large thumbnails) --- */
+    .albums-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 2rem;
+      margin-bottom: 3rem;
+    }
+    .album-card {
+      background: #ffffffd5;
+      backdrop-filter: blur(2px);
+      border-radius: 28px;
+      padding: 1.8rem 1.5rem 1.8rem 1.5rem;
+      box-shadow: 0 10px 25px -10px rgba(170, 150, 140, 0.15);
+      transition: transform 0.3s ease, box-shadow 0.4s;
+      border: 1px solid #f3e5dd;
+      text-align: center;
+    }
+    .album-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 25px 30px -12px rgba(150, 130, 115, 0.2);
+      border-color: #e2cfc0;
+    }
+    .album-thumb {
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      border-radius: 22px;
+      object-fit: cover;
+      background: #f0e1d8;
+      margin-bottom: 1.2rem;
+      box-shadow: 0 4px 12px rgba(158, 135, 120, 0.1);
+      transition: filter 0.3s;
+    }
+    .album-card:hover .album-thumb {
+      filter: brightness(1.02) saturate(1.02);
+    }
+    .album-card h3 {
+      font-weight: 450;
+      font-size: 1.6rem;
+      color: #a48d7e;
+      margin-bottom: 0.3rem;
+    }
+    .album-card p {
+      color: #bfafa4;
+      font-size: 1rem;
+      font-weight: 300;
+    }
+    .album-link {
+      text-decoration: none;
+      color: inherit;
+      display: block;
+    }
+
+    /* --- individual album page (grid & lightbox) --- */
+    .photo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1.2rem;
+      margin: 2rem 0 3rem;
+    }
+    .grid-item {
+      cursor: pointer;
+      border-radius: 22px;
+      overflow: hidden;
+      box-shadow: 0 10px 15px -10px rgba(128, 115, 105, 0.1);
+      transition: all 0.25s ease;
+      aspect-ratio: 1 / 1;
+      background: #f7ede7;
+      border: 1px solid #f3e2d8;
+    }
+    .grid-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.1), filter 0.2s;
+    }
+    .grid-item:hover {
+      box-shadow: 0 20px 25px -8px rgba(171, 147, 132, 0.3);
+      transform: scale(1.02) translateY(-4px);
+      border-color: #ebd1c0;
+    }
+    .grid-item:hover img {
+      transform: scale(1.06);
+      filter: brightness(1.04);
+    }
+
+    /* --- lightbox overlay (pop‑up) --- */
+    .lightbox-overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background-color: rgba(250, 240, 235, 0.92);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0s 0.3s;
+    }
+    .lightbox-overlay.active {
+      opacity: 1;
+      visibility: visible;
+      transition: opacity 0.3s ease, visibility 0s 0s;
+    }
+    .lightbox-content {
+      max-width: 85vw;
+      max-height: 85vh;
+      background: #fffcf9;
+      border-radius: 32px;
+      box-shadow: 0 35px 60px -20px rgba(110, 80, 70, 0.3);
+      padding: 1rem;
+      border: 1px solid #fadac8;
+      position: relative;
+    }
+    .lightbox-content img {
+      width: auto;
+      max-width: 100%;
+      max-height: 80vh;
+      border-radius: 24px;
+      display: block;
+      margin: 0 auto;
+    }
+    .close-lightbox {
+      position: absolute;
+      top: 6px; right: 12px;
+      background: #fffcf9;
+      border: none;
+      font-size: 2.2rem;
+      color: #b9a091;
+      cursor: pointer;
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s, color 0.2s;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.02);
+      line-height: 1;
+    }
+    .close-lightbox:hover {
+      background: #f8e2d6;
+      color: #9e7f6f;
+    }
+    /* lightbox caption (optional but subtle) */
+    .lightbox-caption {
+      text-align: center;
+      color: #ab9589;
+      font-weight: 320;
+      margin-top: 0.5rem;
+    }
+
+    /* about & contact short sections (minimal) */
+    .about-text, .contact-text {
+      background: #fffbf9;
+      border-radius: 28px;
+      padding: 2.2rem 2rem;
+      margin: 2rem 0;
+      box-shadow: 0 5px 18px #f0e4de;
+      border: 1px solid #f6e3d8;
+      color: #5f534b;
+      font-size: 1.2rem;
+      font-weight: 320;
+    }
+    .contact-icons a {
+      color: #baa290;
+      font-size: 1.6rem;
+      margin-right: 1.4rem;
+      transition: color 0.2s;
+    }
+    .contact-icons a:hover { color: #cfaa99; }
+
+    /* footer – subtle */
+    .footer {
+      margin-top: 4rem;
+      padding: 2rem 5%;
+      background: #f1eae5;
+      color: #ac9b90;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.95rem;
+      border-radius: 40px 40px 0 0;
+    }
+    .footer .social a {
+      color: #ac9b90;
+      margin-left: 1.2rem;
+      font-size: 1.3rem;
+      transition: color 0.2s;
+    }
+    .footer .social a:hover { color: #b88f7c; }
+
+    /* hide/show album sections (simple anchor navigation simulation) */
+    .page-section {
+      display: none;
+    }
+    .page-section.active-section {
+      display: block;
+    }
+    /* the homepage is visible by default */
+    #home { display: block; }
+
+    /* mobile fine-tune */
+    @media (max-width: 600px) {
+      .navbar { flex-direction: column; gap: 0.7rem; }
+      .nav-links { gap: 1.4rem; }
+      .section-title { font-size: 1.9rem; }
+      .photo-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+      .footer { flex-direction: column; gap: 1rem; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation bar (clean) -->
+  <nav class="navbar">
+    <div class="logo"><a href="#home">pastel<span>scape</span></a></div>
+    <div class="nav-links">
+      <a href="#home" class="nav-link" data-target="home">Home</a>
+      <a href="#albums" class="nav-link" data-target="albums">Albums</a>
+      <a href="#about" class="nav-link" data-target="about">About</a>
+      <a href="#contact" class="nav-link" data-target="contact">Contact</a>
+    </div>
+  </nav>
+
+  <main class="container">
+    <!-- HOMEPAGE section (albums overview) -->
+    <section id="home" class="page-section active-section">
+      <h2 class="section-title">explore albums</h2>
+      <div class="albums-grid">
+        <!-- album 1 -->
+        <a href="#albums" class="album-link" data-album="citylights">
+          <div class="album-card">
+            <img src="https://picsum.photos/id/1043/600/450" alt="city lights album" class="album-thumb" loading="lazy">
+            <h3>city lights</h3>
+            <p>12 photos</p>
+          </div>
+        </a>
+        <!-- album 2 -->
+        <a href="#albums" class="album-link" data-album="serene">
+          <div class="album-card">
+            <img src="https://picsum.photos/id/15/600/450" alt="serene nature" class="album-thumb" loading="lazy">
+            <h3>serene</h3>
+            <p>8 photos</p>
+          </div>
+        </a>
+        <!-- album 3 -->
+        <a href="#albums" class="album-link" data-album="coastal">
+          <div class="album-card">
+            <img src="https://picsum.photos/id/1015/600/450" alt="coastal mist" class="album-thumb" loading="lazy">
+            <h3>coastal</h3>
+            <p>10 photos</p>
+          </div>
+        </a>
+        <!-- album 4 -->
+        <a href="#albums" class="album-link" data-album="atelier">
+          <div class="album-card">
+            <img src="https://picsum.photos/id/30/600/450" alt="atelier" class="album-thumb" loading="lazy">
+            <h3>atelier</h3>
+            <p>6 photos</p>
+          </div>
+        </a>
+      </div>
+
+      <!-- extra hint (design) -->
+      <div style="font-weight:300; color:#c2b1a6; text-align:center; margin: 2rem 0;">— click any album to open —</div>
+    </section>
+
+    <!-- ALBUMS page (dynamic grid & lightbox) will be shown when clicking albums link or album cards -->
+    <section id="albums" class="page-section">
+      <h2 class="section-title" id="album-title">city lights</h2>
+      <div class="photo-grid" id="dynamic-photo-grid">
+        <!-- images injected via JS -->
+      </div>
+      <p style="color:#b8a89c; font-style:italic; margin-top:0;">↘ click any photo to enlarge</p>
+    </section>
+
+    <!-- ABOUT section -->
+    <section id="about" class="page-section">
+      <h2 class="section-title">about</h2>
+      <div class="about-text">
+        <p>pastelscape is a gentle space for visual storytelling. we believe in soft tones, honest moments, and designs that breathe. every album is crafted with minimal aesthetic and pastel warmth — whether you're here for city geometry or coastal silence.</p>
+        <p style="margin-top:1rem;">—— elegant, responsive, light.</p>
+      </div>
+    </section>
+
+    <!-- CONTACT section -->
+    <section id="contact" class="page-section">
+      <h2 class="section-title">contact</h2>
+      <div class="contact-text">
+        <p>we’d love to hear from you. reach out for prints, collaborations, or just to say hello.</p>
+        <div class="contact-icons" style="margin-top:2rem;">
+          <a href="#"><i class="fab fa-instagram"></i></a>
+          <a href="#"><i class="fab fa-pinterest"></i></a>
+          <a href="#"><i class="fab fa-twitter"></i></a>
+          <a href="#"><i class="far fa-envelope"></i></a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- subtle footer -->
+  <footer class="footer">
+    <div class="copyright">© 2025 pastelscape · all gentle rights</div>
+    <div class="social">
+      <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+      <a href="#" aria-label="Pinterest"><i class="fab fa-pinterest"></i></a>
+      <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+      <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+    </div>
+  </footer>
+
+  <!-- LIGHTBOX overlay (hidden by default) -->
+  <div class="lightbox-overlay" id="lightbox">
+    <div class="lightbox-content">
+      <button class="close-lightbox" id="close-lightbox-btn">&times;</button>
+      <img src="" alt="" id="lightbox-img">
+      <div class="lightbox-caption" id="lightbox-caption"></div>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      // --- mock album data (large thumbnails + lightbox) ---
+      const albumsData = {
+        citylights: {
+          name: 'city lights',
+          cover: 'https://picsum.photos/id/1043/600/450',
+          photos: [
+            { src: 'https://picsum.photos/id/1043/800/800', caption: 'neon avenue' },
+            { src: 'https://picsum.photos/id/1047/800/800', caption: 'rainy night' },
+            { src: 'https://picsum.photos/id/1044/800/800', caption: 'reflections' },
+            { src: 'https://picsum.photos/id/1048/800/800', caption: 'taxi flow' },
+            { src: 'https://picsum.photos/id/1050/800/800', caption: 'downtown' },
+            { src: 'https://picsum.photos/id/1040/800/800', caption: 'rooftop' }
+          ]
+        },
+        serene: {
+          name: 'serene',
+          cover: 'https://picsum.photos/id/15/600/450',
+          photos: [
+            { src: 'https://picsum.photos/id/15/800/800', caption: 'morning mist' },
+            { src: 'https://picsum.photos/id/16/800/800', caption: 'silent path' },
+            { src: 'https://picsum.photos/id/17/800/800', caption: 'meadow' },
+            { src: 'https://picsum.photos/id/18/800/800', caption: 'foggy pines' }
+          ]
+        },
+        coastal: {
+          name: 'coastal',
+          cover: 'https://picsum.photos/id/1015/600/450',
+          photos: [
+            { src: 'https://picsum.photos/id/1015/800/800', caption: 'cliffside' },
+            { src: 'https://picsum.photos/id/1018/800/800', caption: 'waves' },
+            { src: 'https://picsum.photos/id/1019/800/800', caption: 'beach grass' },
+            { src: 'https://picsum.photos/id/102/800/800', caption: 'tide pools' },
+            { src: 'https://picsum.photos/id/1049/800/800', caption: 'distant lighthouse' }
+          ]
+        },
+        atelier: {
+          name: 'atelier',
+          cover: 'https://picsum.photos/id/30/600/450',
+          photos: [
+            { src: 'https://picsum.photos/id/30/800/800', caption: 'studio corner' },
+            { src: 'https://picsum.photos/id/26/800/800', caption: 'canvas' },
+            { src: 'https://picsum.photos/id/27/800/800', caption: 'brushes' },
+            { src: 'https://picsum.photos/id/28/800/800', caption: 'natural light' },
+            { src: 'https://picsum.photos/id/31/800/800', caption: 'palette' }
+          ]
+        }
+      };
+
+      // DOM elements
+      const sections = document.querySelectorAll('.page-section');
+      const navLinks = document.querySelectorAll('.nav-link');
+      const albumSection = document.getElementById('albums');
+      const albumTitle = document.getElementById('album-title');
+      const photoGrid = document.getElementById('dynamic-photo-grid');
+      const lightbox = document.getElementById('lightbox');
+      const lightboxImg = document.getElementById('lightbox-img');
+      const lightboxCaption = document.getElementById('lightbox-caption');
+      const closeBtn = document.getElementById('close-lightbox-btn');
+
+      // currently active album name (default)
+      let currentAlbum = 'citylights';
+
+      // ----- navigation: show/hide sections -----
+      function showSection(sectionId) {
+        sections.forEach(sec => sec.classList.remove('active-section'));
+        const target = document.getElementById(sectionId);
+        if (target) target.classList.add('active-section');
+        // if albums section, ensure album grid is rendered (already default)
+        if (sectionId === 'albums') {
+          renderAlbum(currentAlbum);
+        }
+      }
+
+      // attach click to navbar
+      navLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          const targetId = link.getAttribute('data-target');
+          if (targetId) showSection(targetId);
+        });
+      });
+
+      // ----- render photos for an album (grid + lightbox) -----
+      function renderAlbum(albumKey) {
+        const album = albumsData[albumKey];
+        if (!album) return;
+        currentAlbum = albumKey;
+        albumTitle.innerText = album.name;
+        photoGrid.innerHTML = ''; // clear
+
+        album.photos.forEach((photo, index) => {
+          const gridItem = document.createElement('div');
+          gridItem.className = 'grid-item';
+          const img = document.createElement('img');
+          img.src = photo.src;
+          img.alt = photo.caption;
+          img.loading = 'lazy';
+          gridItem.appendChild(img);
+          // attach click for lightbox
+          gridItem.addEventListener('click', () => {
+            lightboxImg.src = photo.src;
+            lightboxCaption.innerText = photo.caption;
+            lightbox.classList.add('active');
+          });
+          photoGrid.appendChild(gridItem);
+        });
+      }
+
+      // ----- album selection from homepage cards (via data-album) -----
+      const albumLinks = document.querySelectorAll('.album-link[data-album]');
+      albumLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          const albumKey = link.getAttribute('data-album');
+          if (albumKey && albumsData[albumKey]) {
+            currentAlbum = albumKey;
+            renderAlbum(albumKey);
+            showSection('albums');
+          }
+        });
+      });
+
+      // ----- lightbox close -----
+      closeBtn.addEventListener('click', () => {
+        lightbox.classList.remove('active');
+      });
+      lightbox.addEventListener('click', (e) => {
+        if (e.target === lightbox) {
+          lightbox.classList.remove('active');
+        }
+      });
+
+      // initial default: first album shown (city lights) but we only prefill if albums section is visited
+      // but we want to ensure the album grid is loaded when user goes to albums via nav.
+      // also when albums becomes active, we load currentAlbum.
+      // override the showSection a bit: if albums, render current
+      const originalShow = showSection;
+      window.showSection = function(sectionId) {
+        originalShow(sectionId);
+        if (sectionId === 'albums') {
+          renderAlbum(currentAlbum);
+        }
+      };
+      showSection = function(sectionId) {
+        sections.forEach(sec => sec.classList.remove('active-section'));
+        document.getElementById(sectionId).classList.add('active-section');
+        if (sectionId === 'albums') renderAlbum(currentAlbum);
+      };
+      // reassign to global calls
+      navLinks.forEach(link => {
+        link.removeEventListener('click', (e) => {});
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          const targetId = link.getAttribute('data-target');
+          showSection(targetId);
+        });
+      });
+
+      // also handle home album links using the new showSection
+      document.querySelectorAll('.album-link[data-album]').forEach(link => {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          const albumKey = link.getAttribute('data-album');
+          if (albumKey && albumsData[albumKey]) {
+            currentAlbum = albumKey;
+            renderAlbum(albumKey);
+            showSection('albums');
+          }
+        });
+      });
+
+      // lightbox close with ESC key (nice)
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && lightbox.classList.contains('active')) {
+          lightbox.classList.remove('active');
+        }
+      });
+
+      // preload citylights in case albums opened without click
+      renderAlbum('citylights');
+    })();
+  </script>
+
+  <!-- ensure homepage is active if deep link not used -->
+  <noscript>JavaScript for lightbox and album switching – please enable.</noscript>
+</body>
+</html>
